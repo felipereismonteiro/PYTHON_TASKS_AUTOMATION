@@ -29,12 +29,13 @@ if missing:
     print("⚠️ Variáveis ausentes:", ", ".join(missing))
 else:
     print("✅ Todas as variáveis de ambiente foram carregadas corretamente.")
-    
+
 headers_notion = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28"
 }
+
 
 def send_pushbullet_notification(title: str, body: str):
     """
@@ -57,6 +58,7 @@ def send_pushbullet_notification(title: str, body: str):
     else:
         print("❌ Erro ao enviar notificação:", res.status_code, res.text)
 
+
 def send_plan_email(subject, html_body, sender_email, receiver_email, smtp_server, smtp_port, password):
     """
     Envia e-mail com corpo HTML (com fallback simples em texto).
@@ -69,9 +71,9 @@ def send_plan_email(subject, html_body, sender_email, receiver_email, smtp_serve
     # Fallback simples em texto (remove tags grosseiramente)
     plain_fallback = ("Plano do Dia (versão texto)\n\n"
                       + html_body.replace("<br>", "\n").replace("<br/>", "\n")
-                                 .replace("</li>", "\n").replace("</p>", "\n")
-                                 .replace("<strong>", "").replace("</strong>", "")
-                                 .replace("&amp;", "&"))
+                      .replace("</li>", "\n").replace("</p>", "\n")
+                      .replace("<strong>", "").replace("</strong>", "")
+                      .replace("&amp;", "&"))
 
     msg.attach(MIMEText(plain_fallback, "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
@@ -85,124 +87,6 @@ def send_plan_email(subject, html_body, sender_email, receiver_email, smtp_serve
     except Exception as e:
         print("❌ Erro ao enviar e-mail:", e)
 
-def gerar_html_plano_do_dia(conteudo_md: str, arquivo: str | None = None) -> str:
-    """
-    Gera HTML estilizado para um plano em texto (markdown leve).
-    - conteudo_md: string com o plano (ex: saída do ChatGPT)
-    - arquivo: caminho opcional para salvar o HTML
-    """
-    hoje = datetime.now().strftime("%d/%m/%Y")
-
-    # conversão bem simples de markdown -> html (negrito/itálico/linhas/itens)
-    import re
-    md = conteudo_md.strip()
-    md = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", md)   # **bold**
-    md = re.sub(r"\*(.+?)\*", r"<em>\1</em>", md)               # *italic*
-    # listas com "- "
-    md_lines = []
-    in_list = False
-    for line in md.splitlines():
-        if line.strip().startswith("- "):
-            if not in_list:
-                md_lines.append("<ul>")
-                in_list = True
-            md_lines.append(f"<li>{line.strip()[2:]}</li>")
-        else:
-            if in_list:
-                md_lines.append("</ul>")
-                in_list = False
-            # quebra dupla vira parágrafo
-            if line.strip() == "":
-                md_lines.append("<br>")
-            else:
-                md_lines.append(f"<p>{line}</p>")
-    if in_list:
-        md_lines.append("</ul>")
-    md_html = "\n".join(md_lines).replace("  \n", "<br>")
-
-    html = f"""<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>Plano do Dia - {hoje}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root {{ --bg:#0f1115; --card:#151821; --ink:#e7e9ee; --muted:#a7afc0; --accent:#7c9cff; --accent-2:#9ef0b8; --border:#232836; }}
-    * {{ box-sizing:border-box }}
-    html,body {{ margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Color Emoji","Apple Color Emoji", sans-serif; }}
-    .wrap {{ max-width:820px; margin:48px auto; padding:0 20px; }}
-    header {{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }}
-    .title {{ font-size:28px; font-weight:700; letter-spacing:.2px; }}
-    .date {{ color:var(--muted); font-size:14px; }}
-    .card {{ background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border:1px solid var(--border); border-radius:16px; padding:20px; margin:14px 0 22px; box-shadow:0 6px 24px rgba(0,0,0,.25); }}
-    ul {{ padding-left:18px; margin:8px 0; }}
-    li {{ margin:6px 0; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 10px; list-style:disc; }}
-    p {{ margin:8px 0; }}
-    .hint {{ color:var(--muted); font-size:13px; margin-top:6px; }}
-    footer {{ margin-top:28px; padding-top:12px; display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:13px; border-top:1px dashed var(--border); }}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <div class="title">📅 Plano do Dia</div>
-      <div class="date">{hoje}</div>
-    </header>
-
-    <section class="card">
-      {md_html}
-    </section>
-
-    <footer>
-      <span>Feito para você — simples, direto, executável.</span>
-      <span>v1.1</span>
-    </footer>
-  </div>
-</body>
-</html>"""
-
-    if arquivo:
-        with open(arquivo, "w", encoding="utf-8") as f:
-            f.write(html)
-    return html
-
-def build_daily_prompt(tasks_json):
-    """
-    Gera um prompt dinâmico pro ChatGPT baseado nas tarefas do Notion.
-    Ele contextualiza e pede uma lista só com o que deve ser feito no dia.
-    """
-    today = datetime.now().strftime("%A")  # exemplo: 'Sunday'
-    tasks = json.loads(tasks_json) if isinstance(tasks_json, str) else tasks_json
-
-    base_prompt = f"""
-Você é um assistente pessoal que organiza rotinas diárias de forma clara e objetiva.
-
-Hoje é {today}.
-Abaixo estão todas as tarefas do meu sistema de hábitos. 
-Cada tarefa tem nome e, às vezes, uma descrição curta:
-
-{json.dumps(tasks, ensure_ascii=False, indent=2)}
-
-Sua função:
-1. Identificar quais dessas tarefas devem ser feitas **hoje**, considerando:
-   - Tarefas com "(Diáriamente)" → sempre incluir.
-   - Tarefas com "(Semanalmente)" → incluir apenas se hoje for o dia apropriado.
-   - Outras sem frequência → incluir se parecer relevante para rotina do dia (use discernimento).
-2. Montar uma lista **organizada por blocos do dia** (manhã, tarde, noite) com linguagem simples.
-3. No máximo 10 linhas, diretas, para envio por e-mail.
-4. Não repita descrições longas, apenas o essencial da ação.
-
-Formato de saída:
-📅 *Plano do Dia*  
-☀️ **Manhã:**  
-- ...  
-🌤️ **Tarde:**  
-- ...  
-🌙 **Noite:**  
-- ...
-"""
-
-    return base_prompt
 
 def format_tasks(tasks_json):
     """
@@ -236,33 +120,45 @@ def format_tasks(tasks_json):
 
 def ask_chatgpt_plan(tasks_text, model="gpt-4o-mini"):
     prompt = f"""
-Você é um assistente pessoal que cria um plano diário completo e equilibrado.
+    Você é um assistente pessoal que cria um plano diário completo e equilibrado, sempre em formato de **tópicos curtos e práticos**.
 
-Essas são minhas tarefas e descrições:
-{tasks_text}
+    Essas são minhas tarefas e descrições:
+    {tasks_text}
 
-Monte um plano do dia **abrangendo todas as dimensões**:
-1. Mental e emocional (clareza, leitura, respiração, reflexão)
-2. Social e interpessoal (expressão, escuta, exposições, Erika)
-3. Estilo e imagem (looks, ajustes, fotos, compras)
-4. Energia física (treino, sono, hidratação, aparência)
+    Monte um plano do dia **abrangendo todas as dimensões**:
+    1. Mental e emocional (clareza, leitura, respiração, reflexão)
+    2. Social e interpessoal (expressão, escuta, exposições, Erika)
+    3. Estilo e imagem (looks, ajustes, fotos, compras)
+    4. Energia física (treino, sono, hidratação, aparência)
 
-Instruções:
-- Tarefas com “(Diáriamente)” sempre aparecem.
-- “(Semanalmente)” podem ser adaptadas para pequenas ações de preparo.
-- Organize em: manhã, tarde e noite.
-- Use linguagem direta e natural, até 12 linhas.
-- Termine com uma frase de incentivo leve.
+    Instruções:
+    - Tarefas com “(Diáriamente)” sempre aparecem.
+    - “(Semanalmente)” podem ser adaptadas como pequenas ações de preparo.
+    - Use **apenas tópicos** com emojis e frases diretas.
+    - Divida em seções: ☀️ Manhã, 🌤️ Tarde, 🌙 Noite.
+    - Cada tópico deve descrever **o que fazer** em 1 linha, explicando como fazer cada topico com base no que está no notion.
+    - Finalize com uma frase de incentivo curta e positiva.
+    - Não use texto corrido nem blocos, apenas listas com marcadores.
 
-Formato:
-📅 *Plano do Dia*
-☀️ **Manhã:** ...
-🌤️ **Tarde:** ...
-🌙 **Noite:** ...
-📅 *Semanalmente*
-💪 *cuidado físico e visual contínuo*
-"""
+    Formato de saída desejado:
+    ☀️ **Manhã**
+    - ...
+    
+    - ...
 
+    🌤️ **Tarde**
+    - ...
+    
+    - ...
+
+    🌙 **Noite**
+    - ...
+    
+    - ...
+
+    💬 Frase final: ...
+    
+    """
 
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
@@ -325,6 +221,7 @@ def get_tasks(database_id, filters=None, page_size=100, headers=None):
     print(f"Total de tasks encontradas: {len(all_results)}")
     return all_results
 
+
 today = datetime.now(timezone.utc).date().isoformat()
 filters = {
     "and": [
@@ -341,7 +238,7 @@ filters = {
 
 tasks = get_tasks(DATABASE_ID, filters)
 
-# plan = ask_chatgpt_plan(format_tasks(tasks), model="gpt-4o-mini")
+plan = ask_chatgpt_plan(format_tasks(tasks), model="gpt-4o-mini")
 
 # send_plan_email(
 #     subject="Plano do Dia 🌞",
@@ -355,8 +252,7 @@ tasks = get_tasks(DATABASE_ID, filters)
 
 send_pushbullet_notification(
     title="Plano do Dia Enviado!",
-    body=tasks)
-
+    body=plan)
 
 
 
