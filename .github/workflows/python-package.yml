@@ -6,8 +6,8 @@ on:
       - main
   pull_request:
   schedule:
-    - cron: "0 9 * * *"   # roda às 9h UTC (~6h da manhã em São Paulo)
-  workflow_dispatch:       # permite rodar manualmente
+    - cron: "0 8 * * *"
+  workflow_dispatch:      
 
 jobs:
   build-linux:
@@ -33,7 +33,7 @@ jobs:
             conda env update --file environment.yml --name base
           else
             echo "⚠️  Nenhum environment.yml encontrado, instalando dependências básicas."
-            conda install -y requests python-dotenv flake8 pytest
+            conda install -y requests python-dotenv flake8
           fi
 
       - name: Lint with flake8
@@ -44,6 +44,12 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run main script
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          CHAT_API_KEY: ${{ secrets.CHAT_API_KEY }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          PUSH_BULLET_API_KEY: ${{ secrets.PUSH_BULLET_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
           echo "🚀 Executando script principal..."
           python notion_tasks.py
