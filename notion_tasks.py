@@ -10,6 +10,12 @@ from datetime import datetime
 
 load_dotenv()
 
+NOTION_TOKEN = os.getenv("NOTION_TOKEN")
+CHAT_API_KEY = os.getenv("CHAT_API_KEY")
+PASSWORD_GMAIL = os.getenv("PASSWORD_GMAIL")
+PUSH_BULLET_API_KEY = os.getenv("PUSH_BULLET_API_KEY")
+DATABASE_ID = os.getenv("DATABASE_ID")
+
 required = {
     "NOTION_TOKEN": NOTION_TOKEN,
     "CHAT_API_KEY": CHAT_API_KEY,
@@ -23,13 +29,7 @@ if missing:
     print("⚠️ Variáveis ausentes:", ", ".join(missing))
 else:
     print("✅ Todas as variáveis de ambiente foram carregadas corretamente.")
-
-NOTION_TOKEN = os.getenv("NOTION_TOKEN")
-CHAT_API_KEY = os.getenv("CHAT_API_KEY")
-PASSWORD_GMAIL = os.getenv("PASSWORD_GMAIL")
-PUSH_BULLET_API_KEY = os.getenv("PUSH_BULLET_API_KEY")
-DATABASE_ID = os.getenv("DATABASE_ID")
-
+    
 headers_notion = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
     "Content-Type": "application/json",
@@ -356,6 +356,7 @@ tasks = get_tasks(DATABASE_ID, filters)
 send_pushbullet_notification(
     title="Plano do Dia Enviado!",
     body=tasks)
+
 
 
 
