@@ -327,19 +327,20 @@ filters = {
 
 tasks = get_tasks(DATABASE_ID, filters)
 
-plan = ask_chatgpt_plan(format_tasks(tasks), model="gpt-4o-mini")
+# plan = ask_chatgpt_plan(format_tasks(tasks), model="gpt-4o-mini")
 
-send_plan_email(
-    subject="Plano do Dia 🌞",
-    html_body=gerar_html_plano_do_dia(conteudo_md=plan),
-    sender_email="felipe.dreis.monteiro@gmail.com",
-    receiver_email="felipe.dreis.monteiro@gmail.com",
-    smtp_server="smtp.gmail.com",
-    smtp_port=587,
-    password=PASSWORD_GMAIL
-)
+# send_plan_email(
+#     subject="Plano do Dia 🌞",
+#     html_body=gerar_html_plano_do_dia(conteudo_md=plan),
+#     sender_email="felipe.dreis.monteiro@gmail.com",
+#     receiver_email="felipe.dreis.monteiro@gmail.com",
+#     smtp_server="smtp.gmail.com",
+#     smtp_port=587,
+#     password=PASSWORD_GMAIL
+# )
 
 send_pushbullet_notification(
     title="Plano do Dia Enviado!",
-    body=plan)
+    body=tasks)
+
 
