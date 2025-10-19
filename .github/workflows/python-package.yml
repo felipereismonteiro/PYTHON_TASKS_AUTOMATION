@@ -27,13 +27,14 @@ jobs:
       - name: Add conda to system path
         run: echo "$CONDA/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies via Conda
+      - name: Install dependencies
         run: |
-          if [ -f environment.yml ]; then
-            conda env update --file environment.yml --name base
+          if [ -f requirements.txt ]; then
+            echo "📦 Instalando dependências do requirements.txt..."
+            pip install -r requirements.txt
           else
-            echo "⚠️  Nenhum environment.yml encontrado, instalando dependências básicas."
-            conda install -y requests python-dotenv flake8
+            echo "⚠️ Nenhum requirements.txt encontrado, instalando dependências básicas."
+            pip install requests python-dotenv flake8
           fi
 
       - name: Lint with flake8
