@@ -47,9 +47,9 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           CHAT_API_KEY: ${{ secrets.CHAT_API_KEY }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          PASSWORD_GMAIL: ${{ secrets.PASSWORD_GMAIL }}
           PUSH_BULLET_API_KEY: ${{ secrets.PUSH_BULLET_API_KEY }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          DATABASE_ID: ${{ secrets.DATABASE_ID }}
         run: |
           echo "🚀 Executando script principal..."
           python notion_tasks.py
